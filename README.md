@@ -17,6 +17,9 @@ A terminal-based log analysis tool written in Bash.
 # Search for specific keyword
 ./logwatch.sh --file /var/log/wifi.log --grep "timeout"
 ./logwatch.sh --file /var/log/wifi.log --grep "connection"
+# Search across all log files in a directory
+./logwatch.sh --dir /var/log --grep "error"
+./logwatch.sh --dir /var/log --grep "timeout"
 ```
 ## Usage Example
 
@@ -40,6 +43,7 @@ A terminal-based log analysis tool written in Bash.
 - Color-coded output — red errors, yellow warnings, green info
 - Error handling — validates file existence before processing
 - Keyword search — find any word or phrase across the entire log file
+- Directory search — scans all `.log` files in a given directory and shows match count per file
 
 ---
 

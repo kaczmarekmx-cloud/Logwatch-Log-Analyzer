@@ -69,7 +69,38 @@ search_keyword() {
     echo -e "${BOLD}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${RESET}"
     echo -e "  Znaleziono: ${BOLD}${count}${RESET} dopasowań"
     echo ""
-    grep -i "$keyword" "$file" | tail -20
+    grep -i "$keyword" "$file" | tail -20 
+    echo ""
+}
+
+search_in_dir() {
+    local dir=$1
+    local keyword=$2
+    local total=0
+    local files_searched=0
+
+    echo -e "${BOLD}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${RESET}"
+    echo -e "${BOLD}  🔍 Szukam: '${keyword}' w ${dir}${RESET}"
+    echo -e "${BOLD}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${RESET}"
+    echo ""
+
+    while IFS= read -r file; do
+        local count=$(grep -ci "$keyword" "$file" 2>/dev/null)
+        count=${count:-0}
+        files_searched=$((files_searched + 1))
+        total=$((total + count))
+
+        if [ "$count" -gt 0 ]; then
+            echo -e "  ${GREEN}$(basename $file)${RESET} → ${BOLD}${count}${RESET} dopasowań"
+        else
+            echo -e "  $(basename $file) → 0 dopasowań"
+        fi
+    done < <(find "$dir" -maxdepth 1 -name "*.log" -type f)
+
+    echo ""
+    echo -e "${BOLD}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${RESET}"
+    echo -e "  Przeszukano: ${BOLD}${files_searched}${RESET} plików"
+    echo -e "  Łącznie:     ${BOLD}${total}${RESET} dopasowań"
     echo ""
 }
 
@@ -79,6 +110,7 @@ LOG_FILE=$DEFAULT_LOG
 MODE="summary"
 LEVEL=""
 KEYWORD=""
+DIR=""
 
 while [ $# -gt 0 ]; do
     case "$1" in
@@ -99,9 +131,13 @@ while [ $# -gt 0 ]; do
             usage
             exit 0
             ;;
+        --dir)
+            DIR="$2"
+            MODE="dir"
+            shift 2
+            ;;
         --grep)
             KEYWORD="$2"
-            MODE="grep"
             shift 2
             ;;
         *)
@@ -112,12 +148,20 @@ while [ $# -gt 0 ]; do
     esac
 done
 
-check_file "$LOG_FILE"
 
 if [ "$MODE" == "filter" ]; then
+    check_file "$LOG_FILE"
     filter_level "$LOG_FILE" "$LEVEL"
 elif [ "$MODE" == "grep" ]; then
+    check_file "$LOG_FILE"
     search_keyword "$LOG_FILE" "$KEYWORD"
+elif [ "$MODE" == "dir" ]; then
+    if [ ! -d "$DIR" ]; then
+        echo -e "${RED}❌ Błąd: katalog '$DIR' nie istnieje${RESET}"
+        exit 1
+    fi
+    search_in_dir "$DIR" "$KEYWORD"
 else
+    check_file "$LOG_FILE"
     show_summary "$LOG_FILE"
 fi
