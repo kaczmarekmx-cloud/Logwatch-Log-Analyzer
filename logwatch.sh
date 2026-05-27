@@ -59,12 +59,26 @@ filter_level() {
     echo ""
 }
 
+search_keyword() {
+    local file=$1
+    local keyword=$2
+    local count=$(grep -ci "$keyword" "$file")
+
+    echo -e "${BOLD}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${RESET}"
+    echo -e "${BOLD}  🔍 Szukam: '${keyword}' — $(basename $file)${RESET}"
+    echo -e "${BOLD}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${RESET}"
+    echo -e "  Znaleziono: ${BOLD}${count}${RESET} dopasowań"
+    echo ""
+    grep -i "$keyword" "$file" | tail -20
+    echo ""
+}
+
 # ─── MAIN ─────────────────────────────────
 
 LOG_FILE=$DEFAULT_LOG
 MODE="summary"
 LEVEL=""
-usage
+KEYWORD=""
 
 while [ $# -gt 0 ]; do
     case "$1" in
@@ -85,6 +99,11 @@ while [ $# -gt 0 ]; do
             usage
             exit 0
             ;;
+        --grep)
+            KEYWORD="$2"
+            MODE="grep"
+            shift 2
+            ;;
         *)
             echo -e "${RED}❌ Nieznana flaga: $1${RESET}"
             usage
@@ -97,6 +116,8 @@ check_file "$LOG_FILE"
 
 if [ "$MODE" == "filter" ]; then
     filter_level "$LOG_FILE" "$LEVEL"
+elif [ "$MODE" == "grep" ]; then
+    search_keyword "$LOG_FILE" "$KEYWORD"
 else
     show_summary "$LOG_FILE"
 fi
